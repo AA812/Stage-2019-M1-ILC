@@ -1,0 +1,36 @@
+! This file contains commands to be read in for a Pythia8 run.
+! Lines not beginning with a letter or digit are comments.
+! Names are case-insensitive  -  but spellings-sensitive!
+
+! 1) Settings used in the main program.
+Main:numberOfEvents = 50000           ! number of events to generate
+Main:timesAllowErrors = 10         ! how many aborts before run stops
+
+
+! Set random seed to change at each run
+Random:setSeed = on
+Random:seed = 0
+
+! 2) Settings related to output in init(), next() and stat().
+Next:numberCount = 1000             ! print message every n events
+
+! 3) Beam parameter settings. Incoming beams do not radiate.
+Beams:idA = -11                    ! ficititious incoming e+
+Beams:idB = 11                     ! ficititious incoming e-
+PDF:lepton = off                   ! no radiation off ficititious e+e-
+Beams:eCM = 30.                   ! CM energy of collision
+
+! 4) Settings on what is produced
+! first is ee -> WW
+! second is ee -> Z/gamma -> ffbar
+WeakDoubleBoson:ffbar2WW=on
+WeakSingleBoson:ffbar2ffbar(s:gmZ)=on
+
+! 5) Set W decay
+! switch off everything and the switch on quarks
+24:onMode = off
+24:onIfAny = 1 2 3 4 5
+
+! same for Z decay
+23:onMode = off
+23:onIfAny = 1 2 3 4 5
