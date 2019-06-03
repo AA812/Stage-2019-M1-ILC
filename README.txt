@@ -6,14 +6,12 @@ Plusieurs Macro root sont fournis, leur stucture global est fonctionnelle, il fa
 
 
 
-
-
  3 cas sont possibles pour ce programme :
 
  	1. Etude d'une seule simulation :
 
-   		Dans ce cas, il n'y aura qu'une seule simulation effectué qui piochera ses paramétres dans le fichier "file.cmnd";
-    		L'intégrale des données des particules est stocké dans le TTree "event" du fichier Simulation.root;
+   		Dans ce cas, il n'y aura qu'une seule simulation effectuée qui piochera ses paramétres dans le fichier "file.cmnd";
+    		L'intégrale des données des particules est stockée dans le TTree "event" du fichier Simulation.root;
    		Les histogrammes des énergies sont quant à eux stockés dans Histos.root;
 
 
@@ -33,4 +31,12 @@ Plusieurs Macro root sont fournis, leur stucture global est fonctionnelle, il fa
     		Pour cela, l'utilisateur dispose d'une variable ResolVar qu'il pourra placer où bon lui semble dans les formules de résolution et choisir les 			variation dans la boucle de la fonction "PlotEnergy();
    		Par défaut, ce test est effectué pour 3 énergies différentes, les valeurs étant stockées dans 3 fichiers différents : "Output1,2,3.txt";
     		Pour tracer ResTot=f(ResolVar) éxécuter MacroED4.C dans root;
+
+	4. Détermination de l'incertitude sur la résolution à l'énergie Ecdm :
+
+		Afin de déterminer l'incertitude sur la résolution, nous répétons plusieurs fois une simulation à une même énergie afin d'obtenir une 			distribution de la résolution et donc une valeur moyenne ainsi qu'une incertitude. Il est possible de le faire simplement pour une énérgie 
+		mais aussi de boucler sur différentes énergie dans le centre de masse afin d'obternir directement une distribution à chauqe énergie 			(attention, processus long). Celle ci vont nous permettre d'ajouter des barres d'erreurs a nos graphiques.
+		
+
+
 # Stage-2019-M1-ILC

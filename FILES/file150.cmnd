@@ -3,7 +3,7 @@
 ! Names are case-insensitive  -  but spellings-sensitive!
 
 ! 1) Settings used in the main program.
-Main:numberOfEvents = 50000           ! number of events to generate
+Main:numberOfEvents = 100000           ! number of events to generate
 Main:timesAllowErrors = 10         ! how many aborts before run stops
 
 

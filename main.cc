@@ -1,7 +1,7 @@
-//////
+////////
 ///
 ///  Tire en partie de  tutorials/math/mathcoreVectorCollection.C 
-/////
+////////
 
 #include "Pythia8/Pythia.h"
 #include <iostream>
@@ -16,8 +16,16 @@
 #include "TH1F.h"
 #include "PlotEnergy.cc"
 #include "TNtuple.h"
+#include "RooRealVar.h"
+#include "RooDataSet.h"
+#include "RooDataHist.h"
+#include "RooCBShape.h"
+#include "TCanvas.h"
+#include "RooPlot.h"
+#include "TH1D.h"
+#include "RooGlobalFunc.h"
 
-
+using namespace RooFit ;
 using namespace Pythia8;
 using namespace ROOT::Math;
 using namespace std;
@@ -25,43 +33,49 @@ using namespace std;
 
 int main()
 {
- 
- cout<<"Choisir le mode de fonctionnement : "<<endl;
- cout<<"1. Etude d'une seul simulation à une certaine énergie."<<endl;
- cout<<"2. Etude de plusieurs simulations à différentes énergies."<<endl;
- cout<<"3. Etude des effets de la variation d'un paramétre de résolution."<<endl;
- int Case; cin>>Case;
 
- std::vector<string>  fileCDM;
+//--------------------------------------------------------------Initialisation-of-the-choice------------------------------------------------------------------
 
+ int Case=affiche();                  //Choose of the case
+ int Dr=1;
+ if (Case==4) {
+	cout<<"How many Res ?"<<endl;
+	cin>>Dr;
+ }
+
+ std::vector<string>  fileCDM;  //Vector of files used
 
 
  if(Case==1) {
 
         
  	fileCDM={"FILES/file.cmnd"}; //File for one simulation
+
  }
 
 
- if(Case==2) {	
+ if(Case==2 || Case==4) {	
 
-  	
  	fileCDM={"FILES/file30.cmnd","FILES/file50.cmnd","FILES/file80.cmnd","FILES/file100.cmnd","FILES/file150.cmnd","FILES/file300.cmnd","FILES/file600.cmnd","FILES/file1000.cmnd","FILES/file1300.cmnd","FILES/file1750.cmnd","FILES/file2000.cmnd","FILES/file2300.cmnd","FILES/file2750.cmnd","FILES/file3000.cmnd"}; //List of files used to do simulations with different Ecdm
-        
+     
  }
 
  if(Case==3) {
-
 	
- 	 fileCDM={"FILES/file200.cmnd","FILES/file350.cmnd"};//,"FILES/file500.cmnd"}; //List of files used to draw Restot=f(k)
-        
+ 	 fileCDM={"FILES/file200.cmnd","FILES/file350.cmnd","FILES/file500.cmnd"}; //List of files used to draw Restot=f(k)
+  
  }
 
+ MesHistogrammes *Results[fileCDM.size()]; 
 
- MesHistogrammes *Results[fileCDM.size()];
+ float  Reso[fileCDM.size()][Dr];          
+ float  Reso2[fileCDM.size()][Dr];      
 
- for (int d=0; d<fileCDM.size(); d++) {
+
+
+ for (int d=0; d<fileCDM.size(); d++) {  //Beginning of the simulation loop
 	
+	for (int k=0; k<Dr; k++) {    //Resolution distribution Loop (optionnal)
   // Generator.
   Pythia pythia;
   
@@ -73,7 +87,6 @@ int main()
     pythia.readFile(fileCDM[d]);    
                                              
   
-  
   // Extract settings to be used in the main program.
   int nEvent = pythia.mode("Main:numberOfEvents");
   int nAbort = pythia.mode("Main:timesAllowErrors");
@@ -83,10 +96,11 @@ int main()
   pythia.init();
   Results[d]=new MesHistogrammes(pythia.info.eCM());
 
-  //ROOT file opening
-  TFile f1("Simulation.root","RECREATE");
+  TFile f1("Simulation.root","RECREATE"); //ROOT file opening
+
   // create tree
-  TTree t1("event","Tree avec les particules");
+  TTree t1("event", "Arbre des particules");
+
 
 
 //--------------------------------------------Initialisation-of-differents-objects-in-function-of-particles-categories----------------------------------------
@@ -123,9 +137,10 @@ int main()
   
 //---------------------------------------------------------------------Event-loop-----------------------------------------------------------------------------
 
-  // Begin event loop.
+  // Begin event loop..
   int iAbort = 0;
   cout<<"Nb événement : "<<nEvent<<endl;
+  
   for (int iEvent = 0; iEvent < nEvent; ++iEvent)
     {
       // Generate events. Quit if many failures.
@@ -135,6 +150,7 @@ int main()
 	  cout << " Event generation aborted prematurely, owing to error!\n";
 	  break;
 	}
+
       //clear vector
       chargedPDGid.clear();
       chargedTracks.clear();
@@ -142,13 +158,13 @@ int main()
       HNTracks.clear();
       gammaTracks.clear();
       neutrinoTracks.clear();
+
       //fill vectors
-      
       for (int ipart=0; ipart<event.size(); ++ipart)
 	{
 	  Particle& pt=event[ipart];
 
-	  if (pt.status()<=0) continue; //si pas une particule finale, saute
+	  if (pt.status()<=0) continue; //to sort only final particles
 
 	  XYZTVector q(pt.px(),pt.py(),pt.pz(),pt.e());
 
@@ -174,31 +190,60 @@ int main()
 	      std::cout << " This particle isn't in any case " << pt.nameWithStatus() << " PDG code=" << pt.id() << std::endl;
 	    }
 	}
-     
-      t1.Fill();
       
-    }// End of event loop.
+      t1.Fill();	//filling of the tree at each event
+      
+    }// End of event loop
 
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
-	
-  f1.Write();                                             //Sending the tree to Simulation.root (with info of each particle of each event)
- 
+  
+		  				
+  	
+	f1.Write();  //Sending the tree to Simulation.root (with info of each particle of each event)
+	f1.Close();
+
+	cout<<"Calculating for events at E= "<<pythia.info.eCM()<<" GeV in CDM..."<<endl;
+  	plotEnergy(pythia.info.eCM(),d,Case, Results[d], Reso[d][k], Reso2[d][k]);                        //Allow to study energy results of the simulation
+                                             
+
   // Final statistics.
- // pythia.stat();
+ // pythia.stat();//
 
-  cout<<"Calculating for events at E= "<<pythia.info.eCM()<<" GeV in CDM..."<<endl;
-
-  plotEnergy(pythia.info.eCM(),d,Case, Results[d]);                        //Allow to study energy results of the simulation
-
+  } //End of case 4 loop
 	
  } //End of simulation loop
 
+if (Case==4) {
+
+ TFile f2("Resoluncer.root","RECREATE"); //ROOT file opening
+
+ TH1F *RES[fileCDM.size()];
+ TH1F *RES2[fileCDM.size()];
+
+ for (int p=0; p<fileCDM.size();p++) {
+
+	RES[p]= new TH1F("DistribResG", "Distribution de la résolution totale, gauss", 100,0,30);
+	RES2[p]= new TH1F("DistribResCB", "Distribution de la résolution totale, CB", 100,0,30);
+	
+	for (int v=0; v<Dr; v++) {
+
+		RES[p]->Fill(Reso[p][v]);
+		RES2[p]->Fill(Reso2[p][v]);
+	}
+	
+	RES[p]->Write();
+	RES2[p]->Write();
+ }
+}
+
+
 //------------------------------------------------------------------------------------------------------------------------------------------------------------
   for(int i=0; i<fileCDM.size(); i++) {
-      delete Results[i];
+      delete Results[i]; 
   }
  
+
   return 0;
 }
 

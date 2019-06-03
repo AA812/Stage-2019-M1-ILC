@@ -3,7 +3,7 @@
 ! Names are case-insensitive  -  but spellings-sensitive!
 
 ! 1) Settings used in the main program.
-Main:numberOfEvents = 50000           ! number of events to generate
+Main:numberOfEvents = 50000          ! number of events to generate
 Main:timesAllowErrors = 10         ! how many aborts before run stops
 
 
@@ -18,7 +18,7 @@ Next:numberCount = 1000            ! print message every n events
 Beams:idA = -11                    ! ficititious incoming e+
 Beams:idB = 11                     ! ficititious incoming e-
 PDF:lepton = off                   ! no radiation off ficititious e+e-
-Beams:eCM = 200.                   ! CM energy of collision
+Beams:eCM = 3000.                   ! CM energy of collision
 
 ! 4) Settings on what is produced
 ! first is ee -> WW
