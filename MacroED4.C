@@ -6,11 +6,11 @@
         TMultiGraph *F=new TMultiGraph();
         F->GetXaxis()->SetTitle("Stochastic factor of photons resolution");
 	F->GetYaxis()->SetTitle("#sigma/Etot");
-        F->SetTitle("Total energy resolution in fonction of PHOTONS resolution");
+        F->SetTitle("Total energy resolution in fonction of photons resolution (ZEUS)");
 
-	TGraph *gr=new TGraph("output1.txt");
-	TGraph *gf=new TGraph("output2.txt");
-        TGraph *gk=new TGraph("output3.txt");
+	TGraph *gr=new TGraph("output31.txt");
+	TGraph *gf=new TGraph("output32.txt");
+        TGraph *gk=new TGraph("output33.txt");
 
        //TF1 *plot = new TF1("plot", "[0]*sqrt(1/x)",0,3000);
        //TF1 *ploti = new TF1("ploti","[0]*sqrt(1/x)+[1]*(1/x)+[2]",0,2500);

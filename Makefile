@@ -4,7 +4,7 @@ LIB=`pythia8-config --libs` `root-config --libs` -lRooFit -lRooFitCore -lHtml -l
 
 
 all : main.exe 
-
+ 
 clean:
 	rm *.o *.exe
 
@@ -16,7 +16,6 @@ main.o: main.cc
 
 PlotEnergy.o: PlotEnergy.cc 
 	$(COMPIL) $(INCLUDE) PlotEnergy.cc -c -o PlotEnergy.o
-
 
 
 

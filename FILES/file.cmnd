@@ -18,7 +18,7 @@ Next:numberCount = 1000            ! print message every n events
 Beams:idA = -11                    ! ficititious incoming e+
 Beams:idB = 11                     ! ficititious incoming e-
 PDF:lepton = off                   ! no radiation off ficititious e+e-
-Beams:eCM = 3000.                   ! CM energy of collision
+Beams:eCM = 1750.                   ! CM energy of collision
 
 ! 4) Settings on what is produced
 ! first is ee -> WW
