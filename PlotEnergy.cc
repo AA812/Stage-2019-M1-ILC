@@ -251,17 +251,20 @@ float RCourbe(float Pt, float B, float q) {                           //Radius o
 	float J=1.60218e-10;	  //Conversion GeV to Joules
 	float PtR=Pt*J/c;	  //[PtR]=m*kg/s
 	float e=1.602176634e-19; //elementary charge
-	return PtR/(B*q*e);
+	return (PtR/(B*q*e));
 }
 
-vector<double> Center(float R, ROOT::Math::XYZTVector P, vector<double> PosProd) {            //Calculating the center of curvature with momentum
- 	double A=(P.Y()/P.X());
-	double xC=PosProd[0]+(R*A)/sqrt(1+A*A);
-	double yC=PosProd[1]-(R/sqrt(1+A*A));
+vector<double> Center(float R, ROOT::Math::XYZTVector Q, vector<double> PosProd) {            //Calculating the center of curvature with momentum
+
+	float c=299792458;        //Light celerity
+ 	float J=1.60218e-10;	  //Conversion GeV to Joules
+        vector<double> P={Q.X()*J/c, Q.Y()*J/c, Q.Z()*J/c};
+	double xC=PosProd[0]-(R*(-P[1]))/sqrt(P[0]*P[0]+P[1]*P[1]);
+	double yC=PosProd[1]-(R*P[0])/sqrt(P[0]*P[0]+P[1]*P[1]);
 	vector<double> C;
 	C.push_back(xC);
 	C.push_back(yC);
-	C.push_back(0);
+	C.push_back(PosProd[2]);
 	return C;
 }
 	
@@ -293,6 +296,8 @@ class Cercle {
 
 XYZTVector intersect (Cercle C1, Cercle C2, vector <double> Pos, XYZTVector Q) { //Check if Circle C1 and C2 are intersecting and return the position of detection (CHARGED PARTICLES)
 
+ float c=299792458;        //Light celerity
+ float J=1.60218e-10;	  //Conversion GeV to Joules
  float N=(pow(C2.Rayon,2)-pow(C1.Rayon,2)-pow(C2.Centre[0],2)+pow(C1.Centre[0],2)-pow(C2.Centre[1],2)+pow(C1.Centre[1],2))/(2*(C1.Centre[1]-C2.Centre[1]));
  float A=pow((C1.Centre[0]-C2.Centre[0])/(C1.Centre[1]-C2.Centre[1]),2)+1;	
  float B=2*C1.Centre[1]*((C1.Centre[0]-C2.Centre[0])/(C1.Centre[1]-C2.Centre[1]))-2*N*((C1.Centre[0]-C2.Centre[0])/(C1.Centre[1]-C2.Centre[1]))-2*C1.Centre[0];
@@ -301,8 +306,8 @@ XYZTVector intersect (Cercle C1, Cercle C2, vector <double> Pos, XYZTVector Q) {
  XYZTVector x1;
  XYZTVector x2;
  XYZTVector null(0,0,0,0);
- vector<double> P={Q.X(),Q.Y(),Q.Z()};
- vector<double> Pz={0,0,Q.Z()};
+ vector<double> P={Q.X()*J/c,Q.Y()*J/c,Q.Z()*J/c};
+ vector<double> Pz={0,0,Q.Z()*J/c};
 
  if (Delta>=0) {
 
@@ -330,18 +335,47 @@ else {return null;}
 
 XYZTVector NHDetection (XYZTVector Q,double R) {         //Position of the detection of a neutral Hadron
 
+	float c=299792458;        //Light celerity
+ 	float J=1.60218e-10;	  //Conversion GeV to Joules
+	vector<double> P={Q.X()*J/c,Q.Y()*J/c,Q.Z()*J/c};
+	vector<double> Pz={0,0,Q.Z()*J/c};
 	XYZTVector PosDetec;
-	double A=(Q.Y()/Q.X());
-	PosDetec.SetPx(R/sqrt(1+A*A));
-	PosDetec.SetPy(R*A/sqrt(1+A*A));
-	vector<double> P={Q.X(),Q.Y(),Q.Z()};
-	vector<double> Pz={0,0,Q.Z()};
+	PosDetec.SetPx((R*P[0])/sqrt(P[0]*P[0]+P[1]*P[1]));
+	PosDetec.SetPy((R*P[1])/sqrt(P[0]*P[0]+P[1]*P[1]));
+	
 	double o=sqrt(PosDetec.X()*PosDetec.X()+PosDetec.Y()*PosDetec.Y());
 	PosDetec.SetPz(o/tan(Angle(P,Pz)));
 	return PosDetec;
 }
-	
 
+//------------------------------------------------------Lead-to-a-break-segmentation-for-now------------------------------------------------------------------
+
+std::vector<ROOT::Math::XYZTVector> *ConfusionNHCP(std::vector<ROOT::Math::XYZTVector> vecNH,std::vector<ROOT::Math::XYZTVector> vecCP) {	
+	std::vector<ROOT::Math::XYZTVector> NewNH;
+	for (int itNH=0; itNH<vecNH.size(); itNH++){
+		cout<<vecNH[itNH].X()<<" "<<vecNH[itNH].Y()<<" "<<vecNH[itNH].Z()<<" "<<vecNH[itNH].E()<<endl;
+		int NoDetec=0;
+		for (std::vector<ROOT::Math::XYZTVector>::iterator itCP=vecCP->begin(); itCP != vecCP->end(); itCP++){
+			//cout<<itCP->X()<<" "<<itCP->Y()<<" "<<itCP->Z()<<" "<<itCP->E()<<endl;
+			//double distDetectMax=0.05;
+			//double DIST=sqrt((itCP->X()-itNH->X())*(itCP->X()-itNH->X())+(itCP->Y()-itNH->Y())*(itCP->Y()-itNH->Y())+(itCP->Z()-itNH->Z())*(itCP->Z()-itNH->Z()));	
+			//cout<<"tout va bien"<<endl;
+			//cout<<"Dist = "<<DIST<<endl;
+			//if (itCP==vecCP->end()-1) {
+			//	cout<<"last"<<endl;
+			//}
+			//if (DIST<distDetectMax || itNH->E()<(sqrt(itCP->E())/3)) {
+				//NoDetec++;
+			//}
+		//}
+		//if (NoDetec==0) {
+			//XYZTVector NHDetec(itNH->X(),itNH->Y(),itNH->Z(),itNH->E());
+			//NewNH.push_back(NHDetec);
+		//}	
+	}
+	std::vector<ROOT::Math::XYZTVector> *TEST=&NewNH;
+	return TEST;
+}
 
 //------------------------------------Function-wich-read-the-tree-from-main-then-do-sums-and-fill-histogramms-------------------------------------------------
 
@@ -365,10 +399,16 @@ MesHistogrammes* PlotEnergy(double Ecdm, double ResolVar, int Case, std::ofstrea
   t1->SetBranchAddress("CP_PDG",&pChargedPDGid);
   std::vector<ROOT::Math::XYZTVector> * pChargedTracks = 0;
   t1->SetBranchAddress("CP_LV",&pChargedTracks);
+  std::vector<ROOT::Math::XYZTVector> CPDetectPos;
+  std::vector<ROOT::Math::XYZTVector> *pCPDetectPos=0;
+  t1->SetBranchAddress("CP_DetectPos",&pCPDetectPos);
   std::vector<int> * phnPDGid = 0;
   t1->SetBranchAddress("HN_PDG",&phnPDGid);
-  std::vector<ROOT::Math::XYZTVector> * pHNTracks = 0;
+  std::vector<ROOT::Math::XYZTVector> *pHNTracks = 0;
   t1->SetBranchAddress("HN_LV",&pHNTracks);
+  std::vector<ROOT::Math::XYZTVector> HNDetectPos;
+  std::vector<ROOT::Math::XYZTVector> *pHNDetectPos=0;
+  t1->SetBranchAddress("HN_DetectPos",&pHNDetectPos);
   std::vector<ROOT::Math::XYZTVector> * pGammaTracks = 0;
   t1->SetBranchAddress("GAM_LV",&pGammaTracks);
   std::vector<ROOT::Math::XYZTVector> * pNeutrinoTracks =0;
@@ -383,12 +423,19 @@ MesHistogrammes* PlotEnergy(double Ecdm, double ResolVar, int Case, std::ofstrea
     {
       t1->GetEntry(i);
 
+      //if no confusion
       double EtNH=calculSommeEnergie(ResolutionStochastiqueNH(0.35,0,0),pHNTracks,1);                  //SUM NH
+      //with confusion on nh because of cp
+      //HNDetectPos=*pHNDetectPos;
+      //CPDetectPos=*pCPDetectPos;
+      //std::vector<ROOT::Math::XYZTVector> *ConfuNH=ConfusionNHCP(HNDetectPos,CPDetectPos);
+      //double EtNH=calculSommeEnergie(ResolutionStochastiqueNH(0.443,1.8/100,0.18/100),ConfuNH,1);
+
       if(EtNH>0) {
       	histos->HNEnergySmeasured.Fill(EtNH);
       }
 
-      double EtEM=calculSommeEnergie(ResolutionStochastiqueEM(0.18,0,0),pGammaTracks,1);            //SUM EM
+      double EtEM=calculSommeEnergie(ResolutionStochastiqueEM(0.166,1.1/100,0),pGammaTracks,1);            //SUM EM
       if(EtEM>0) {
       	histos->EMEnergySmeasured.Fill(EtEM);
       }
@@ -481,7 +528,6 @@ void plotEnergy(double Ecdm, int d, int Case, MesHistogrammes *R, const char* Fi
 
 	std::ofstream f;
 	std::ofstream u;
-	std::ofstream truc;
 	
   	R=PlotEnergy(Ecdm,0, Case,f,FileName);                             //Cacul of histogramms
 	TH1F *ETotSMEAR=&R->EnergyTotaleSmeared;
@@ -509,8 +555,6 @@ void plotEnergy(double Ecdm, int d, int Case, MesHistogrammes *R, const char* Fi
  		f.close();
 		u.open("output13.txt");                       //Usefull to clear the file before writing in
  		u.close();
-		truc.open("output14.txt");                       //Usefull to clear the file before writing in
- 		truc.close();
          }
 
          else {	
@@ -533,9 +577,6 @@ void plotEnergy(double Ecdm, int d, int Case, MesHistogrammes *R, const char* Fi
 		u.open ("output13.txt", std::ofstream::out | std::ofstream::app);    //To draw f(EtotMeasured)=sigma/EtotMeasured, use MacroED2.C
    	 	u<<std::endl<<R->ESmearWithoutNeut.GetMean()<<" "<<R->ResDisNoNeut.GetMean()*R->ResDisNoNeut.GetMean()<<" "<<2*R->ResDisNoNeut.GetMean()*R->ResDisNoNeut.GetStdDev();
    	 	u.close();
-		truc.open ("output14.txt", std::ofstream::out | std::ofstream::app);    //To draw f(EtotMeasured)=sigma/EtotMeasured, use MacroED2.C
-   	 	truc<<std::endl<<CB->Mean<<" "<<CB->Sigma*CB->Sigma<<" "<<2*CB->Sigma*CB->SigmaErr;
-		truc.close();
 	}	
 	
 

@@ -175,26 +175,31 @@ if (Case2==1) {                                    //Do simulations or not ?
       for (int ipart=0; ipart<event.size(); ++ipart)
 	{
 	  Particle& pt=event[ipart];
-
+	
 	  if (pt.status()<=0) continue; //to sort only final particles
 
-	  XYZTVector q(pt.px(),pt.py(),pt.pz(),pt.e());
-	  float DistProd=sqrt(pt.xProd()*pt.xProd()+pt.yProd()*pt.yProd()+pt.zProd()*pt.zProd());
-          vector<double> PosProd={pt.xProd(),pt.yProd(),pt.zProd()};
+	  XYZTVector q(pt.px(),pt.py(),pt.pz(),pt.e()); //Care, its in GeV
+          vector<double> PosProd={pt.xProd()*(1e-3),pt.yProd()*(1e-3),pt.zProd()*(1e-3)};  //mm to meter
 
 	  if (pt.charge()!=0 && pt.m()!=0)            //Charged Particles
 	    {
+	      XYZTVector null(0,0,0,0);
 	      chargedPDGid.push_back(pt.id());
 	      chargedTracks.push_back(q);
 	      float Rcourbure=RCourbe(pt.pT(),MF,pt.charge());          //Charged Particles interaction with magnetic field
-	      Cercle PartCurve(Rcourbure,Center(Rcourbure,q,PosProd));			
-	      CPDetectPos.push_back(intersect(PartCurve,Tracker,PosProd,q));  //Where the particle is detected OR NOT
+	      Cercle PartCurve(Rcourbure,Center(Rcourbure,q,PosProd));	
+	      XYZTVector DetectPos=intersect(Tracker,PartCurve,PosProd,q);
+	      DetectPos.SetE(pt.e());
+	      CPDetectPos.push_back(DetectPos);  //Where the particle is detected OR NOT
 	    }
+
 	  else if (pt.charge()==0 && pt.m()!=0 && abs(pt.id())>18)  //Neutral Hadrons
 	    {
 	      hnPDGid.push_back(pt.id());
 	      HNTracks.push_back(q);
-	      HNDetectPos.push_back(NHDetection(q,Rdec));
+	      XYZTVector DetectPos=NHDetection(q,Rdec);
+	      DetectPos.SetE(pt.e());
+	      HNDetectPos.push_back(DetectPos);
 	    }
 	  else if (abs(pt.id())<=18 && pt.charge()==0){ //Neutrinos
 		
@@ -225,13 +230,8 @@ if (Case2==1) {                                    //Do simulations or not ?
 //--------------------------------------------------------------Studying-energy-results-of-simulations--------------------------------------------------------
 
 	cout<<"Calculating for simulation at E= "<<pythia.info.eCM()<<" GeV in CM..."<<endl;
-  	//plotEnergy(pythia.info.eCM(),d,Case, Results[d],SimuFiles[d]);                    //Allow to study energy results of the simulation
-	/*vector<float> G={8,6,0};
-	vector<float> H={3,2,0};
-        Cercle A(5,G);
-	Cercle B(3,H);
-	vector<float> Test=intersect(B,A,G);
-	cout<<"Test : x="<<Test[0]<<"  y="<<Test[1]<<"  z="<<Test[2]<<endl;*/
+  	plotEnergy(pythia.info.eCM(),d,Case, Results[d],SimuFiles[d]);                    //Allow to study energy results of the simulation
+	
   } //End of simulation loop
 
 for (int d=0; d<fileCDM.size(); d++) {
