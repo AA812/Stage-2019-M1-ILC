@@ -189,8 +189,9 @@ if (Case2==1) {                                    //Do simulations or not ?
 	      float Rcourbure=RCourbe(pt.pT(),MF,pt.charge());          //Charged Particles interaction with magnetic field
 	      Cercle PartCurve(Rcourbure,Center(Rcourbure,q,PosProd));	
 	      XYZTVector DetectPos=intersect(Tracker,PartCurve,PosProd,q);
-	      DetectPos.SetE(pt.e());
+              if (DetectPos!=null) {
 	      CPDetectPos.push_back(DetectPos);  //Where the particle is detected OR NOT
+		}
 	    }
 
 	  else if (pt.charge()==0 && pt.m()!=0 && abs(pt.id())>18)  //Neutral Hadrons
@@ -198,7 +199,6 @@ if (Case2==1) {                                    //Do simulations or not ?
 	      hnPDGid.push_back(pt.id());
 	      HNTracks.push_back(q);
 	      XYZTVector DetectPos=NHDetection(q,Rdec);
-	      DetectPos.SetE(pt.e());
 	      HNDetectPos.push_back(DetectPos);
 	    }
 	  else if (abs(pt.id())<=18 && pt.charge()==0){ //Neutrinos

@@ -181,7 +181,7 @@ PlotFitGauss::PlotFitGauss(TH1F *H) {
 	TF1* Fiti=new TF1("Fiti","gaus");
 	Fiti->SetParameter(1,gMean.getValV());
 	Fiti->SetParameter(2,gSigma.getValV());
-	H->Fit("Fiti","Q");
+	H->Fit("Fiti","QM0");
 	gStyle->SetOptFit();					  //Show fit parameters on cd
 	if (Fiti->GetParameter(2)>H->GetStdDev()) {               //In this condition, Gaussian is wrong, so we keep histos values
 			Mean=H->GetMean();
@@ -189,6 +189,7 @@ PlotFitGauss::PlotFitGauss(TH1F *H) {
 			MeanErr=H->GetMeanError();
 			SigmaErr=H->GetStdDevError();
 		} else {
+			H->Fit("Fiti","QM");
 			Mean=Fiti->GetParameter(1);
  			Sigma=Fiti->GetParameter(2);
 			MeanErr=Fiti->GetParError(1);
@@ -230,7 +231,7 @@ PlotFitCB::PlotFitCB(TH1F *H) {
 	Fiti->SetParameter(2,cbSigma.getValV());
 	Fiti->SetParameter(3,cbalpha.getValV());
 	Fiti->SetParameter(4,n.getValV());
-	H->Fit("Fiti","Q");
+	H->Fit("Fiti","QM");
 	gStyle->SetOptFit();					  //Show fit parameters on cd
 	Mean=Fiti->GetParameter(1);
  	Sigma=Fiti->GetParameter(2);
@@ -322,6 +323,8 @@ XYZTVector intersect (Cercle C1, Cercle C2, vector <double> Pos, XYZTVector Q) {
 	
 	x1.SetPz(o1/tan(Angle(P,Pz)));
 	x2.SetPz(o1/tan(Angle(P,Pz)));
+	x1.SetE(Q.E());
+	x2.SetE(Q.E());
  
 	if (sqrt(pow(x1.X()-Pos[0],2)+pow(x1.Y()-Pos[1],2))<=sqrt(pow(x2.X()-Pos[0],2)+pow(x2.Y()-Pos[1],2))) {
 		return x1;
@@ -345,33 +348,26 @@ XYZTVector NHDetection (XYZTVector Q,double R) {         //Position of the detec
 	
 	double o=sqrt(PosDetec.X()*PosDetec.X()+PosDetec.Y()*PosDetec.Y());
 	PosDetec.SetPz(o/tan(Angle(P,Pz)));
+	PosDetec.SetE(Q.E());
 	return PosDetec;
 }
 
-//------------------------------------------------------Lead-to-a-break-segmentation-for-now------------------------------------------------------------------
 
-std::vector<ROOT::Math::XYZTVector> *ConfusionNHCP(std::vector<ROOT::Math::XYZTVector> vecNH,std::vector<ROOT::Math::XYZTVector> vecCP) {	
+std::vector<ROOT::Math::XYZTVector> *ConfusionNHCP(std::vector<ROOT::Math::XYZTVector> &vecNH,std::vector<ROOT::Math::XYZTVector> &vecCP) {	
 	std::vector<ROOT::Math::XYZTVector> NewNH;
 	for (int itNH=0; itNH<vecNH.size(); itNH++){
-		cout<<vecNH[itNH].X()<<" "<<vecNH[itNH].Y()<<" "<<vecNH[itNH].Z()<<" "<<vecNH[itNH].E()<<endl;
 		int NoDetec=0;
-		for (std::vector<ROOT::Math::XYZTVector>::iterator itCP=vecCP->begin(); itCP != vecCP->end(); itCP++){
-			//cout<<itCP->X()<<" "<<itCP->Y()<<" "<<itCP->Z()<<" "<<itCP->E()<<endl;
-			//double distDetectMax=0.05;
-			//double DIST=sqrt((itCP->X()-itNH->X())*(itCP->X()-itNH->X())+(itCP->Y()-itNH->Y())*(itCP->Y()-itNH->Y())+(itCP->Z()-itNH->Z())*(itCP->Z()-itNH->Z()));	
-			//cout<<"tout va bien"<<endl;
-			//cout<<"Dist = "<<DIST<<endl;
-			//if (itCP==vecCP->end()-1) {
-			//	cout<<"last"<<endl;
-			//}
-			//if (DIST<distDetectMax || itNH->E()<(sqrt(itCP->E())/3)) {
-				//NoDetec++;
-			//}
-		//}
-		//if (NoDetec==0) {
-			//XYZTVector NHDetec(itNH->X(),itNH->Y(),itNH->Z(),itNH->E());
-			//NewNH.push_back(NHDetec);
-		//}	
+		for (int itCP=0; itCP<vecCP.size(); itCP++){
+			double distDetectMax=0.05;
+			double DIST=sqrt((vecCP[itCP].X()-vecNH[itNH].X())*(vecCP[itCP].X()-vecNH[itNH].X())+(vecCP[itCP].Y()-vecNH[itNH].Y())*(vecCP[itCP].Y()-vecNH[itNH].Y())+(vecCP[itCP].Z()-vecNH[itNH].Z())*(vecCP[itCP].Z()-vecNH[itNH].Z()));
+			if (DIST<distDetectMax || vecNH[itNH].E()<(sqrt( vecCP[itCP].E())/3)) {
+				NoDetec++;
+			}
+		}
+		if (NoDetec==0) {
+			XYZTVector NHDetec(vecNH[itNH].X(),vecNH[itNH].Y(),vecNH[itNH].Z(),vecNH[itNH].E());
+			NewNH.push_back(NHDetec);
+		}	
 	}
 	std::vector<ROOT::Math::XYZTVector> *TEST=&NewNH;
 	return TEST;
@@ -424,12 +420,11 @@ MesHistogrammes* PlotEnergy(double Ecdm, double ResolVar, int Case, std::ofstrea
       t1->GetEntry(i);
 
       //if no confusion
-      double EtNH=calculSommeEnergie(ResolutionStochastiqueNH(0.35,0,0),pHNTracks,1);                  //SUM NH
-      //with confusion on nh because of cp
-      //HNDetectPos=*pHNDetectPos;
-      //CPDetectPos=*pCPDetectPos;
-      //std::vector<ROOT::Math::XYZTVector> *ConfuNH=ConfusionNHCP(HNDetectPos,CPDetectPos);
-      //double EtNH=calculSommeEnergie(ResolutionStochastiqueNH(0.443,1.8/100,0.18/100),ConfuNH,1);
+     // double EtNH=calculSommeEnergie(ResolutionStochastiqueNH(0.443,1.8/100,0.18/100),pHNTracks,1);                  //SUM NH
+      //with confusion on nh because of cp (same event)
+      std::vector<ROOT::Math::XYZTVector> *ConfuNH=ConfusionNHCP(*pHNDetectPos,*pCPDetectPos);
+      double EtNH=calculSommeEnergie(ResolutionStochastiqueNH(0.443,1.8/100,0.18/100),ConfuNH,1);
+
 
       if(EtNH>0) {
       	histos->HNEnergySmeasured.Fill(EtNH);
@@ -450,7 +445,7 @@ MesHistogrammes* PlotEnergy(double Ecdm, double ResolVar, int Case, std::ofstrea
       double Etot=calculSommeEnergie(identity,pHNTracks,1)+calculSommeEnergie(identity,pGammaTracks,1)+calculSommeEnergie(identity,pChargedTracks,1);
 
       double Esmear=EtNH+EtEM+EtCPTrack;				//Total Energy Measured (with CP resol on momentum)
-	
+     
       histos->EnergyTotaleVraie.Fill(Etot);
       histos->EnergyTotaleSmeared.Fill(Esmear);
       EsmearTot.push_back(Esmear);
@@ -476,7 +471,7 @@ MesHistogrammes* PlotEnergy(double Ecdm, double ResolVar, int Case, std::ofstrea
 	int s, p;
 	vector <float> Eg=EsmearTot;
 	vector <float> En=EnoNeutTot;
-	for (int c=0; c<20000; c++) {				//Number of entries in sampled histos
+	for (int c=0; c<30000; c++) {				//Number of entries in sampled histos
 		do {
 			s=gRandom->Integer(Eg.size());
 		} while (Eg[s]==0);                              //Never fill with the same value
@@ -532,8 +527,13 @@ void plotEnergy(double Ecdm, int d, int Case, MesHistogrammes *R, const char* Fi
   	R=PlotEnergy(Ecdm,0, Case,f,FileName);                             //Cacul of histogramms
 	TH1F *ETotSMEAR=&R->EnergyTotaleSmeared;
 	PlotFitCB *CB=NULL;
+	int Bug=0;
 	do {
 	     CB=new PlotFitCB(ETotSMEAR);
+	     Bug++;
+	     if (Bug==100000) {
+		break;
+	     }
 	} while (CB->alpha<=0 || CB->alpha>10);
 	
 	TH1F* DistribRes=&R->ResDis;
